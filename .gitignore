@@ -10,3 +10,16 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+
+# bazel
+bazel
+bazel-bazel-test
+bazel-bin
+bazel-genfiles
+bazel-out
+bazel-testlogs
+bazel-vagrant
+bazel-bazel-example
+.vagrant/
+Vagrantfile
+.idea/
