@@ -1,6 +1,6 @@
 # kurapika
 
-central intel for sentinels
+central intel
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/ice1n36/kurapika)](https://goreportcard.com/report/github.com/ice1n36/kurapika)
 [![Coverage Status](https://img.shields.io/codecov/c/github/ice1n36/kurapika.svg)](https://codecov.io/gh/ice1n36/kurapika)
@@ -9,6 +9,12 @@ central intel for sentinels
 
 ```
 go get github.com/ice1n36/kurapika
+```
+
+## Build & Run
+
+```
+bazel run :kurapika
 ```
 
 # LICENSE
