@@ -13,6 +13,7 @@
 
 # bazel
 bazel
+bazel-*
 bazel-bazel-test
 bazel-bin
 bazel-genfiles
