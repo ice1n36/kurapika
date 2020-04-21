@@ -31,3 +31,10 @@ container_image(
     files = [":kurapika"],
 )
 
+container_push(
+    name = "kurapika_container_image_push",
+    format = "Docker",
+    image = ":kurapika_container_image",
+    registry = "index.docker.io",
+    repository = "ice1n36/kurapika",
+)

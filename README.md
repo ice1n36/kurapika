@@ -13,8 +13,22 @@ go get github.com/ice1n36/kurapika
 
 ## Build & Run
 
+### Locally
 ```
 bazel run :kurapika
+```
+
+### Docker
+```
+bazel run :kurapika_container_image
+docker run --rm -it -p8081:8081 bazel/kurapika_container_image
+```
+
+## Publish
+
+### Docker
+```
+bazel run :kurapika_container_push
 ```
 
 # LICENSE
