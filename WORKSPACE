@@ -52,6 +52,15 @@ load(
 
 container_go_deps()
 
+load("@io_bazel_rules_docker//container:pull.bzl", "container_pull")
+
+container_pull(
+    name = "alpine_linux_amd64",
+    registry = "index.docker.io",
+    repository = "library/alpine",
+    tag = "3.8",
+)
+
 # load go docker rules
 load(
     "@io_bazel_rules_docker//go:image.bzl",
