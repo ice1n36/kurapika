@@ -20,3 +20,20 @@ go_binary(
     embed = [":go_default_library"],
     visibility = ["//visibility:public"],
 )
+
+# load bazel rules for docker images
+load("@io_bazel_rules_docker//go:image.bzl", "go_image")
+#load("@io_bazel_rules_docker//container:container.bzl", "container_push", "container_image")
+
+# declare the base `go` image - this is the same format as the standard
+# `go_binary` rule.
+go_image(
+    name = "kurapika_go_image",
+    srcs = ["main.go"],
+    importpath = "github.com/ice1n36/kurapika",
+    visibility = ["//visibility:private"],
+    deps = [
+        "@org_uber_go_fx//:go_default_library",
+        "@org_uber_go_zap//:go_default_library",
+    ],
+)
