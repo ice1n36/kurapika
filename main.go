@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/ice1n36/kurapika/handlers"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"net/http"
@@ -66,8 +67,11 @@ func NewLogger() *zap.SugaredLogger {
 	return sugar
 }
 
-func Register(mux *http.ServeMux, h http.Handler) {
+func Register(mux *http.ServeMux,
+	h http.Handler,
+	sah *handlers.ScanApkHandler) {
 	mux.Handle("/", h)
+	mux.Handle("/scan_apk", sah)
 }
 
 func main() {
@@ -79,6 +83,7 @@ func opts() fx.Option {
 		fx.Provide(
 			NewMux,
 			NewHandler,
+			handlers.NewScanApkHandler,
 			NewLogger,
 		),
 		fx.Invoke(Register),
