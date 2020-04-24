@@ -2,10 +2,11 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "go_default_library",
-    srcs = ["scan_apk.go"],
+    srcs = ["new_app.go"],
     importpath = "github.com/ice1n36/kurapika/handlers",
     visibility = ["//visibility:public"],
     deps = [
+        "//clients:go_default_library",
         "@org_uber_go_zap//:go_default_library",
     ],
 )
