@@ -56,6 +56,7 @@ func (s *NewAppHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	// download app
 	var app string
+
 	if sareq.Os == "android" {
 		app, err = s.downloadAPK(sareq.AppId, sareq.DeviceCodeName, dir)
 		if err != nil {
@@ -72,11 +73,12 @@ func (s *NewAppHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// upload app to mobsf
-	err = s.mobsf.Upload(app)
+	hash, err := s.mobsf.Upload(app)
 	if err != nil {
 		http.Error(w, "Upload app failed", http.StatusInternalServerError)
 		return
 	}
+	s.logger.Infow("Upload successful", "hash", hash)
 
 	// TODO: spin up thread to wait for mobsf scan to finish, get the result and report (i.e. email)
 	return
