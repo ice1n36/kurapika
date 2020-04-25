@@ -89,6 +89,10 @@ func (s *NewAppHandler) downloadAPK(appId string, deviceCodeName string, dir str
 	cmd := exec.Command("gplaycli", "-f", dir, "-dc", deviceCodeName, "-d", appId)
 
 	err := cmd.Run()
+	if err != nil {
+		return "", err
+	}
+
 	apkPath := appId + ".apk"
-	return filepath.Join(dir, apkPath), err
+	return filepath.Join(dir, apkPath), nil
 }

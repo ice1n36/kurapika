@@ -4,9 +4,12 @@ import (
 	"context"
 	"github.com/ice1n36/kurapika/clients"
 	"github.com/ice1n36/kurapika/handlers"
+	"go.uber.org/config"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"net/http"
+	"os"
+	"path/filepath"
 )
 
 func NewMux(lc fx.Lifecycle, logger *zap.SugaredLogger) *http.ServeMux {
@@ -68,6 +71,25 @@ func NewLogger() *zap.SugaredLogger {
 	return sugar
 }
 
+func NewConfig() config.Provider {
+	configDir := os.Getenv("CONFIGDIR")
+
+	if configDir == "" {
+		cwd, _ := os.Getwd()
+		configDir = filepath.Join(cwd, "config")
+	}
+
+	basePath := filepath.Join(configDir, "base.yaml")
+	secretsPath := filepath.Join(configDir, "secrets.yaml")
+	provider, err := config.NewYAML(config.File(basePath), config.File(secretsPath))
+	if err != nil {
+		// configs are important, if this fails, the whole app should fail
+		panic(err)
+	}
+
+	return provider
+}
+
 func Register(mux *http.ServeMux,
 	h http.Handler,
 	sah *handlers.NewAppHandler) {
@@ -87,6 +109,7 @@ func opts() fx.Option {
 			handlers.NewNewAppHandler,
 			NewLogger,
 			clients.NewMobSFHTTPClient,
+			NewConfig,
 		),
 		fx.Invoke(Register),
 	)

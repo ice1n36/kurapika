@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"go.uber.org/config"
 	"go.uber.org/zap"
 	"io/ioutil"
 	"mime/multipart"
@@ -12,6 +14,7 @@ import (
 	"time"
 )
 
+// MobSFHTTPClient is the interface for all things that interface with mobsf
 type MobSFHTTPClient interface {
 	Upload(string) (string, error)
 }
@@ -22,6 +25,7 @@ type mobSFHTTPClientImpl struct {
 	port   int
 	apiKey string
 	client *http.Client
+	config config.Provider
 }
 
 type uploadRespBody struct {
@@ -30,18 +34,20 @@ type uploadRespBody struct {
 	Filename string `json:"file_name"`
 }
 
-func NewMobSFHTTPClient(logger *zap.SugaredLogger) MobSFHTTPClient {
+// NewMobSFHTTPClient creates a new MobSFHTTPClient based on configuration
+func NewMobSFHTTPClient(logger *zap.SugaredLogger, config config.Provider) MobSFHTTPClient {
 	return &mobSFHTTPClientImpl{
 		logger: logger,
-		host:   "localhost",
-		port:   8000,
-		apiKey: "none", // TODO: pull apiKey from configuration file
+		host:   config.Get("mobsf.host").String(),
+		port:   config.Get("mobsf.port").Value().(int),
+		apiKey: config.Get("mobsf.apikey").String(),
 		client: &http.Client{
 			Timeout: time.Second * 10,
 		},
 	}
 }
 
+// Upload sends app (apk/ipa) to mobsf via /api/v1/upload
 func (m *mobSFHTTPClientImpl) Upload(appPath string) (string, error) {
 	m.logger.Infow("Uploading to mobsf", "file", appPath)
 
@@ -58,11 +64,13 @@ func (m *mobSFHTTPClientImpl) Upload(appPath string) (string, error) {
 		m.logger.Errorw("error uploading", "error", err.Error())
 		return "", err
 	}
+	defer resp.Body.Close()
+
 	if resp.StatusCode != 200 {
 		m.logger.Errorw("bad response code", "code", resp.StatusCode)
 		return "", errors.New("Bad response code")
 	}
-	defer resp.Body.Close()
+
 	respBody := uploadRespBody{}
 	respBodyData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {

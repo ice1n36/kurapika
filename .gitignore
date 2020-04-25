@@ -24,3 +24,6 @@ bazel-bazel-example
 .vagrant/
 Vagrantfile
 .idea/
+
+# secrets
+secrets.yaml

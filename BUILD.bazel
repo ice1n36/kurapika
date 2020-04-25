@@ -12,6 +12,7 @@ go_library(
     deps = [
         "//clients:go_default_library",
         "//handlers:go_default_library",
+        "@org_uber_go_config//:go_default_library",
         "@org_uber_go_fx//:go_default_library",
         "@org_uber_go_zap//:go_default_library",
     ],
