@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"go.uber.org/zap"
 	"io/ioutil"
 	"mime/multipart"
@@ -36,7 +35,7 @@ func NewMobSFHTTPClient(logger *zap.SugaredLogger) MobSFHTTPClient {
 		logger: logger,
 		host:   "localhost",
 		port:   8000,
-		apiKey: "f49aa336071752c875c435117adc7b9eca0e2a8d784447aabf4721a612ee2b19", // TODO: pull apiKey from configuration file
+		apiKey: "none", // TODO: pull apiKey from configuration file
 		client: &http.Client{
 			Timeout: time.Second * 10,
 		},
@@ -71,7 +70,6 @@ func (m *mobSFHTTPClientImpl) Upload(appPath string) (string, error) {
 		return "", err
 	}
 
-	fmt.Printf(string(respBodyData))
 	err = json.Unmarshal(respBodyData, &respBody)
 	if err != nil {
 		m.logger.Errorw("error unmarshalling", "error", err.Error())
