@@ -62,6 +62,13 @@ container_pull(
     tag = "3.8",
 )
 
+container_pull(
+    name = "gplaycli_base",
+    registry = "index.docker.io",
+    repository = "ice1n36/gplaycli",
+    tag = "latest"
+)
+
 # load go docker rules
 load(
     "@io_bazel_rules_docker//go:image.bzl",

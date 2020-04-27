@@ -29,7 +29,7 @@ load("@io_bazel_rules_docker//container:container.bzl", "container_push", "conta
 
 container_image(
     name = "kurapika_container_image",
-    base = "@alpine_linux_amd64//image",
+    base = "@gplaycli_base//image",
     entrypoint = ["/kurapika"],
     files = [":kurapika"],
 )

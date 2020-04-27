@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/ice1n36/kurapika/clients"
 	"go.uber.org/zap"
 	"io/ioutil"
@@ -21,6 +22,12 @@ type NewAppRequest struct {
 	AppVersion     string `json:"app_version"`
 	DeviceCodeName string `json:"device_codename"`
 	Os             string `json:"os"`
+}
+
+type NewAppResponse struct {
+	Hash       string `json:"hash"`
+	AppId      string `json:"app_id"`
+	AppVersion string `json:"app_version"`
 }
 
 func NewNewAppHandler(logger *zap.SugaredLogger, mobsf clients.MobSFHTTPClient) (*NewAppHandler, error) {
@@ -79,20 +86,49 @@ func (s *NewAppHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	s.logger.Infow("Upload successful", "hash", hash)
+	response := NewAppResponse{
+		AppId:      sareq.AppId,
+		AppVersion: sareq.AppVersion,
+		Hash:       hash,
+	}
+	responseJson, err := json.Marshal(response)
+	if err != nil {
+		s.logger.Errorw("Error marshalling response", "error", err.Error())
+		http.Error(w, "Response creation failure", http.StatusInternalServerError)
+		return
+	}
 
-	// TODO: spin up thread to wait for mobsf scan to finish, get the result and report (i.e. email)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(responseJson)
+
+	go func() {
+		err := s.mobsf.Scan(sareq.AppId, "apk", hash)
+		if err != nil {
+			s.logger.Errorw("Scan failed", "error", err.Error())
+			// TODO: alert something that scan failed
+		}
+
+		// TODO: get the result and report (i.e. email)
+	}()
 	return
 }
 
 // downloads and returns the path to the apk downloaded
 func (s *NewAppHandler) downloadAPK(appId string, deviceCodeName string, dir string) (string, error) {
-	cmd := exec.Command("gplaycli", "-f", dir, "-dc", deviceCodeName, "-d", appId)
+	cmd := exec.Command("gplaycli", "-f", dir, "-av", "-dc", deviceCodeName, "-d", appId)
 
 	err := cmd.Run()
 	if err != nil {
 		return "", err
 	}
 
-	apkPath := appId + ".apk"
-	return filepath.Join(dir, apkPath), nil
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return "", err
+	}
+	if len(files) != 1 {
+		return "", errors.New("more than one file in app download directory")
+	}
+
+	return filepath.Join(dir, files[0].Name()), nil
 }

@@ -20,15 +20,26 @@ bazel run :kurapika
 
 ### Docker
 ```
-bazel run :kurapika_container_image
-docker run --rm -it -p8081:8081 bazel/kurapika_container_image
+bazel run --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 :kurapika_container_image
+docker run --rm -v /Users/tngo/go/src/github.com/ice1n36/kurapika/config:/config -it -p8081:8081 bazel/kurapika_container_image
 ```
 
 ## Publish
 
 ### Docker
+
 ```
-bazel run :kurapika_container_push
+bazel run --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 :kurapika_container_image_push
+```
+
+## Test
+
+### Unit
+TODO
+
+### Locally
+```
+curl -X POST localhost:8081/new_app -d '{"app_id": "cz.digerati.iqtest", "device_codename": "walleye", "os": "android"}'
 ```
 
 # LICENSE

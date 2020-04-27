@@ -17,6 +17,7 @@ import (
 // MobSFHTTPClient is the interface for all things that interface with mobsf
 type MobSFHTTPClient interface {
 	Upload(string) (string, error)
+	Scan(string, string, string) error
 }
 
 type mobSFHTTPClientImpl struct {
@@ -84,6 +85,10 @@ func (m *mobSFHTTPClientImpl) Upload(appPath string) (string, error) {
 		return "", err
 	}
 	return respBody.Hash, nil
+}
+
+func (m *mobSFHTTPClientImpl) Scan(appId string, appType string, hash string) error {
+	return nil
 }
 
 // Creates a new file upload http request with optional extra params
