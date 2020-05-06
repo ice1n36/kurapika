@@ -10,7 +10,9 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -87,7 +89,30 @@ func (m *mobSFHTTPClientImpl) Upload(appPath string) (string, error) {
 	return respBody.Hash, nil
 }
 
-func (m *mobSFHTTPClientImpl) Scan(appId string, appType string, hash string) error {
+func (m *mobSFHTTPClientImpl) Scan(fileName string, appType string, hash string) error {
+	m.logger.Infow("Scan request to mobsf", "fileName", fileName, "appType", appType, "hash", hash)
+	uri := fmt.Sprintf("http://%s:%d/api/v1/scan", m.host, m.port)
+	q := url.Values{}
+	q.Add("scan_type", appType)
+	q.Add("file_name", fileName)
+	q.Add("hash", hash)
+	body := strings.NewReader(q.Encode())
+	request, err := http.NewRequest("POST", uri, body)
+	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Add("Authorization", m.apiKey)
+
+	client := &http.Client{}
+	resp, err := client.Do(request)
+	if err != nil {
+		m.logger.Errorw("error requesting scan", "error", err.Error())
+		return err
+	}
+
+	if resp.StatusCode != 200 {
+		m.logger.Errorw("bad response code", "code", resp.StatusCode)
+		return errors.New("Bad response code")
+	}
+
 	return nil
 }
 

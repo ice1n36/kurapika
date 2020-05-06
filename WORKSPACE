@@ -66,7 +66,7 @@ container_pull(
     name = "gplaycli_base",
     registry = "index.docker.io",
     repository = "ice1n36/gplaycli",
-    tag = "latest"
+    tag = "latest",
 )
 
 # load go docker rules
@@ -308,4 +308,11 @@ go_repository(
     importpath = "go.uber.org/config",
     sum = "h1:upnMPpMm6WlbZtXoasNkK4f0FhxwS+W4Iqz5oNznehQ=",
     version = "v1.4.0",
+)
+
+go_repository(
+    name = "com_github_google_uuid",
+    importpath = "github.com/google/uuid",
+    sum = "h1:Gkbcsh/GbpXz7lPftLA3P6TYMwjCLYm83jiFQZF/3gY=",
+    version = "v1.1.1",
 )

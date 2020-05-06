@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"github.com/google/uuid"
 	"github.com/ice1n36/kurapika/clients"
 	"go.uber.org/zap"
 	"io/ioutil"
@@ -28,7 +29,17 @@ type NewAppResponse struct {
 	Hash       string `json:"hash"`
 	AppId      string `json:"app_id"`
 	AppVersion string `json:"app_version"`
+	KId        string `json:"k_id"`
+	Status     string `json:"status"`
 }
+
+const (
+	StatusDownloading = "Downloading"
+	StatusUploading   = "Uploading"
+	StatusScanning    = "Scanning"
+	StatusComplete    = "Complete"
+	StatusFailure     = "Failure"
+)
 
 func NewNewAppHandler(logger *zap.SugaredLogger, mobsf clients.MobSFHTTPClient) (*NewAppHandler, error) {
 	logger.Infow("Executing NewNewAppHandler.")
@@ -39,7 +50,9 @@ func NewNewAppHandler(logger *zap.SugaredLogger, mobsf clients.MobSFHTTPClient) 
 }
 
 func (s *NewAppHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	s.logger.Infow("New App Event")
+	// generate a kurapika id
+	kId := uuid.New().String()
+	s.logger.Infow("New App Event", "kid", kId)
 
 	sareq := NewAppRequest{}
 
@@ -56,9 +69,17 @@ func (s *NewAppHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	defer os.RemoveAll(dir)
 
+	response := NewAppResponse{
+		AppId:      sareq.AppId,
+		AppVersion: sareq.AppVersion,
+		KId:        kId,
+		Status:     StatusDownloading,
+	}
+
 	s.logger.Infow("Downloading app",
 		"req", sareq,
 		"dir", dir,
+		"kid", kId,
 	)
 
 	// download app
@@ -68,7 +89,10 @@ func (s *NewAppHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		app, err = s.downloadAPK(sareq.AppId, sareq.DeviceCodeName, dir)
 		if err != nil {
 			http.Error(w, "download app failed", http.StatusInternalServerError)
-			s.logger.Errorw("error during downloading of app", "error", err.Error())
+			s.logger.Errorw("error during downloading of app",
+				"kid", kId,
+				"error", err.Error(),
+			)
 			return
 		}
 	} else if sareq.Os == "ios" {
@@ -79,37 +103,44 @@ func (s *NewAppHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	response.Status = StatusUploading
+
 	// upload app to mobsf
-	hash, err := s.mobsf.Upload(app)
+	appPath := filepath.Join(dir, app)
+	hash, err := s.mobsf.Upload(appPath)
 	if err != nil {
 		http.Error(w, "Upload app failed", http.StatusInternalServerError)
 		return
 	}
 	s.logger.Infow("Upload successful", "hash", hash)
-	response := NewAppResponse{
-		AppId:      sareq.AppId,
-		AppVersion: sareq.AppVersion,
-		Hash:       hash,
-	}
+	response.Hash = hash
+
+	response.Status = StatusScanning
+	go func() {
+		err := s.mobsf.Scan(app, "apk", hash)
+		if err != nil {
+			s.logger.Errorw("Scan failed",
+				"kid", kId,
+				"error", err.Error(),
+			)
+			// TODO: alert something that scan failed
+		}
+
+		// TODO: get the result and report (i.e. email)
+	}()
+
 	responseJson, err := json.Marshal(response)
 	if err != nil {
-		s.logger.Errorw("Error marshalling response", "error", err.Error())
+		s.logger.Errorw("Error marshalling response",
+			"kid", kId,
+			"error", err.Error(),
+		)
 		http.Error(w, "Response creation failure", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(responseJson)
-
-	go func() {
-		err := s.mobsf.Scan(sareq.AppId, "apk", hash)
-		if err != nil {
-			s.logger.Errorw("Scan failed", "error", err.Error())
-			// TODO: alert something that scan failed
-		}
-
-		// TODO: get the result and report (i.e. email)
-	}()
 	return
 }
 
@@ -130,5 +161,5 @@ func (s *NewAppHandler) downloadAPK(appId string, deviceCodeName string, dir str
 		return "", errors.New("more than one file in app download directory")
 	}
 
-	return filepath.Join(dir, files[0].Name()), nil
+	return files[0].Name(), nil
 }
